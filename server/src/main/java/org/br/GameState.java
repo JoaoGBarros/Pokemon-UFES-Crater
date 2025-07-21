@@ -3,10 +3,11 @@ package org.br;
 import org.json.JSONObject;
 
 public class GameState {
-    private Pokemon player = new Pokemon("Pikachu", 25, 85, 100,  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/25.png");
-    private Pokemon enemy = new Pokemon("Charmander", 20, 70, 90, "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png");
+    private Pokemon player = new Pokemon("Pikachu", 25, 85, 100, 100,  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/25.png");
+    private Pokemon enemy = new Pokemon("Charmander", 20, 70, 90, 80,"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png");
     private String lastLog;
     private String battleStatus = "In Progress";
+    private int turn = 0;
 
     public void processPlayerAttack(String attackName) {
         int damage = 10;
@@ -27,6 +28,18 @@ public class GameState {
             this.battleStatus = "Finished";
         }
         this.lastLog = enemy.name + " revidou e causou " + damage + " de dano!";
+    }
+
+    public void processAttack(String attackName) {
+        if(player.speed > enemy.speed) {
+            processPlayerAttack(attackName);
+            if(battleStatus.equals("Finished")) return;
+            processEnemyAttack();
+        } else {
+            processEnemyAttack();
+            if(battleStatus.equals("Finished")) return;
+            processPlayerAttack(attackName);
+        }
     }
 
     public JSONObject toJson() {

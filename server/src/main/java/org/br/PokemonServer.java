@@ -41,16 +41,14 @@ public class PokemonServer extends WebSocketServer {
         switch (messageType) {
             case "attack":
                 String attackName = receivedJson.getString("payload");
-                gameState.processPlayerAttack(attackName);
                 JSONObject attackJson = new JSONObject();
                 attackJson.put("type", "battleUpdate");
                 attackJson.put("payload", gameState.toJson());
                 conn.send(attackJson.toString());
-
                 new Thread(() -> {
                     try {
-                        Thread.sleep(2000);
-                        gameState.processEnemyAttack();
+                        Thread.sleep(10);
+                        gameState.processAttack(attackName);
                         conn.send(gameState.toJson().toString());
                     } catch (InterruptedException e) {
                         e.printStackTrace();

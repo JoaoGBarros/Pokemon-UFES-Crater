@@ -7,13 +7,15 @@ public class Pokemon {
     int level;
     int hp;
     int maxHp;
+    int speed;
     String sprite;
 
-    public Pokemon(String name, int level, int hp, int maxHp, String sprite) {
+    public Pokemon(String name, int level, int hp, int maxHp, int speed, String sprite) {
         this.name = name;
         this.level = level;
         this.hp = hp;
         this.maxHp = maxHp;
+        this.speed = speed;
         this.sprite = sprite;
     }
 

@@ -60,7 +60,7 @@ function BattlePage() {
                     </Button>
                 </div>
 
-                <div className="flex-1 flex flex-col" style={{ backgroundImage: `url(${battleBackground})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', backgroundColor: 'rgb(74, 144, 226)' }}>
+                <div className="flex-1 flex flex-col" style={{ backgroundImage: `url(${battleBackground})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center 60%', backgroundSize: 'contain', backgroundColor: 'rgb(74, 144, 226)' }}>
                 <div className="flex-1 flex items-start justify-end p-8 mt-10">
                     <div className="text-right flex flex-row-reverse">
                         <div className="bg-white bg-opacity-90 rounded-lg p-3 mb-4 shadow-lg">
@@ -80,7 +80,8 @@ function BattlePage() {
                         <img
                             src={enemyPokemon.sprite}
                             alt={enemyPokemon.name}
-                            className="w-32 h-32 object-contain mr-80 mt-30"
+                            className="w-45 h-45 object-contain relative"
+                            style={{ transform: 'translateY(200px) translateX(-480px)' }}
                         />
                     </div>
                 </div>
@@ -90,7 +91,8 @@ function BattlePage() {
                         <img
                             src={playerPokemon.sprite}
                             alt={playerPokemon.name}
-                            className="w-40 h-40 object-contain mb-4 ml-80"
+                            className="w-50 h-50 object-contain relative"
+                            style={{ transform: 'translateY(-30px) translateX(320px)' }}
                         />
                         <div className="bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
                             <div className="font-bold text-lg">{playerPokemon.name}</div>
@@ -109,11 +111,8 @@ function BattlePage() {
                     </div>
                 </div>
             </div>
-
-            {/* Interface de comandos */}
             <div className="bg-white bg-opacity-95 border-t-4 border-blue-600 p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Log de batalha */}
                     <div className="order-2 lg:order-1">
                         <div className="bg-gray-100 rounded-lg p-4 h-32 overflow-y-auto">
                             <div className="text-sm space-y-1">
@@ -123,8 +122,6 @@ function BattlePage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Botões de ação */}
                     <div className="order-1 lg:order-2">
                         {!selectedAction ? (
                             <div className="grid grid-cols-2 gap-3">

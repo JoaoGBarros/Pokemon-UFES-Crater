@@ -17,8 +17,6 @@ function BattlePage() {
     const [selectedAction, setSelectedAction] = useState<string | null>(null)
     const [playerPokemon, setPlayerPokemon] = useState<Pokemon>()
     const [enemyPokemon, setEnemyPokemon] = useState<Pokemon>()
-    const playerPokemonSetRef = useRef(false);
-    const enemyPokemonSetRef = useRef(false);
     const [battleLog, setBattleLog] = useState<string[]>([
         "Um Pokémon selvagem apareceu!",
         "Vá, Pikachu!"
@@ -35,21 +33,19 @@ function BattlePage() {
 
         socket.current.onmessage = (event) => {
             const serverMessage = JSON.parse(event.data);
-            const setPokemonWithMaxHpOnce = (setter: typeof setPlayerPokemon, setRef: React.MutableRefObject<boolean>, incoming: Pokemon) => {
-                if (!setRef.current) {
-                    setter({ ...incoming, maxHp: incoming.currentHp });
-                    setRef.current = true;
-                } else {
-                    setter(incoming);
-                }
-            };
             switch (serverMessage.type) {
                 case "battleUpdate":
                     if (serverMessage.battleStatus == 'Finished') {
                         navigate("/");
                     } else {
-                        setPokemonWithMaxHpOnce(setPlayerPokemon, playerPokemonSetRef, serverMessage.player);
-                        setPokemonWithMaxHpOnce(setEnemyPokemon, enemyPokemonSetRef, serverMessage.enemy);
+                        setPlayerPokemon({
+                            ...serverMessage.player,
+                            maxHp: serverMessage.player.stats?.hp ?? serverMessage.player.stats.hp
+                        });
+                        setEnemyPokemon({
+                            ...serverMessage.enemy,
+                            maxHp: serverMessage.enemy.stats?.maxHp ?? serverMessage.enemy.stats.maxHp
+                        });
                         setBattleLog(prev => [...prev, serverMessage.log]);
                     }
                     break;
@@ -60,8 +56,14 @@ function BattlePage() {
                     if (serverMessage.battleStatus === 'Finished') {
                         navigate("/");
                     }
-                    setPokemonWithMaxHpOnce(setPlayerPokemon, playerPokemonSetRef, serverMessage.player);
-                    setPokemonWithMaxHpOnce(setEnemyPokemon, enemyPokemonSetRef, serverMessage.enemy);
+                    setPlayerPokemon({
+                            ...serverMessage.player,
+                            maxHp: serverMessage.player.stats?.hp ?? serverMessage.player.stats.hp
+                        });
+                        setEnemyPokemon({
+                            ...serverMessage.enemy,
+                            maxHp: serverMessage.enemy.stats?.hp ?? serverMessage.enemy.stats.hp
+                        });
                     setBattleLog(prev => [...prev, serverMessage.log]);
             }
         };
@@ -125,7 +127,7 @@ function BattlePage() {
                                     <div className="w-32 bg-gray-200 rounded-full h-2">
                                         <div
                                             className={`h-2 rounded-full transition-all duration-300 ${getHpColor(getHpPercentage(enemyPokemon?.currentHp ?? 0, enemyPokemon?.maxHp ?? 1))}`}
-                                            style={{ width: `${getHpPercentage(enemyPokemon?.currentHp ?? 0, enemyPokemon?.currentHp ?? 1)}%` }}
+                                            style={{ width: `${getHpPercentage(enemyPokemon?.currentHp ?? 0, enemyPokemon?.maxHp ?? 1)}%` }}
                                         ></div>
                                     </div>
                                     <div className="text-xs text-right mt-1">{enemyPokemon?.currentHp ?? "?"}/{enemyPokemon?.maxHp ?? "?"}</div>

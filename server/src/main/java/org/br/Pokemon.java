@@ -29,6 +29,7 @@ public class Pokemon {
         JSONObject json = new JSONObject();
         json.put("name", name);
         json.put("level", level);
+        json.put("stats", stats);
         json.put("currentHp", currentHp);
         json.put("sprite", sprite);
         json.put("moves", moves.keySet());

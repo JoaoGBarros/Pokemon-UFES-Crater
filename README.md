@@ -4,7 +4,7 @@ Repositório para o Trabalho 2 da disciplina de Redes de Computadores, 2025/1.
 
 ## Descrição
 
-Este projeto é uma implementação do desafio "Servidor de Jogo Multiplayer Básico", proposto na disciplina de Redes de Computadores. O objetivo é criar um MMORPG 2D inspirado em jogos clássicos da franquia Pokémon e em projetos como PokeMMO e Pokémon Crater.
+Este projeto é uma implementação do desafio "Servidor de Jogo Multiplayer Básico", proposto na disciplina de Redes de Computadores.
 
 O sistema consiste em um servidor autoritativo feito em Java que gerencia o estado do jogo, e um cliente web interativo feito em React. Os jogadores podem se conectar, se ver em um mundo compartilhado, se locomover em tempo real e batalhar uns contra os outros. A comunicação em tempo real é realizada utilizando WebSockets.
 
@@ -60,11 +60,13 @@ Após os contêineres estarem em execução, os serviços estarão disponíveis 
 
 - [x] Conexão persistente entre Cliente (React) e Servidor (Java) via WebSockets.
 
-- [x] Gerenciamento de múltiplos jogadores em um lobby/mapa compartilhado.
+- [] Gerenciamento de múltiplos jogadores em um lobby/mapa compartilhado.
 
-- [x] Sincronização de movimento dos jogadores em tempo real.
+- [] Sincronização de movimento dos jogadores em tempo real.
 
-- [ ] Sistema de batalha 1v1 em turnos.
+- [x] Sistema de batalha 1v1 em turnos.
+
+- [x] Sistema de chat no jogo.
 
 - [ ] Transição entre diferentes mapas do jogo.
 
@@ -72,14 +74,8 @@ Após os contêineres estarem em execução, os serviços estarão disponíveis 
 
 ## Possiveis Melhorias Futuras
 
-- Possíveis Melhorias Futuras
-
-- Implementação de um sistema de chat no jogo.
-
 - Adição de NPCs (Non-Player Characters) e Pokémon selvagens nos mapas.
 
-- Criação de um sistema de trocas entre jogadores.
-
-- Expansão do mundo com mais mapas, cidades e ginásios.
+- Expansão do mundo com mais mapas.
 
 - Implementação de um sistema de inventário e itens.

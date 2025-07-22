@@ -13,3 +13,12 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: pokemon-server
+    ports:
+      - "8887:8887"
+    depends_on:
+      - frontend

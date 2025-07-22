@@ -6,9 +6,10 @@ import battleBackground from '@/assets/battle_background/Game Boy Advance - Poke
 interface Pokemon {
     name: string
     level: number
-    hp: number
+    currentHp: number
     maxHp: number
     sprite: string
+    moves: string[]
 }
 
 function BattlePage() {
@@ -16,6 +17,8 @@ function BattlePage() {
     const [selectedAction, setSelectedAction] = useState<string | null>(null)
     const [playerPokemon, setPlayerPokemon] = useState<Pokemon>()
     const [enemyPokemon, setEnemyPokemon] = useState<Pokemon>()
+    const playerPokemonSetRef = useRef(false);
+    const enemyPokemonSetRef = useRef(false);
     const [battleLog, setBattleLog] = useState<string[]>([
         "Um Pokémon selvagem apareceu!",
         "Vá, Pikachu!"
@@ -32,13 +35,21 @@ function BattlePage() {
 
         socket.current.onmessage = (event) => {
             const serverMessage = JSON.parse(event.data);
+            const setPokemonWithMaxHpOnce = (setter: typeof setPlayerPokemon, setRef: React.MutableRefObject<boolean>, incoming: Pokemon) => {
+                if (!setRef.current) {
+                    setter({ ...incoming, maxHp: incoming.currentHp });
+                    setRef.current = true;
+                } else {
+                    setter(incoming);
+                }
+            };
             switch (serverMessage.type) {
                 case "battleUpdate":
                     if (serverMessage.battleStatus == 'Finished') {
                         navigate("/");
                     } else {
-                        setPlayerPokemon(serverMessage.player);
-                        setEnemyPokemon(serverMessage.enemy);
+                        setPokemonWithMaxHpOnce(setPlayerPokemon, playerPokemonSetRef, serverMessage.player);
+                        setPokemonWithMaxHpOnce(setEnemyPokemon, enemyPokemonSetRef, serverMessage.enemy);
                         setBattleLog(prev => [...prev, serverMessage.log]);
                     }
                     break;
@@ -49,8 +60,8 @@ function BattlePage() {
                     if (serverMessage.battleStatus === 'Finished') {
                         navigate("/");
                     }
-                    setPlayerPokemon(serverMessage.player);
-                    setEnemyPokemon(serverMessage.enemy);
+                    setPokemonWithMaxHpOnce(setPlayerPokemon, playerPokemonSetRef, serverMessage.player);
+                    setPokemonWithMaxHpOnce(setEnemyPokemon, enemyPokemonSetRef, serverMessage.enemy);
                     setBattleLog(prev => [...prev, serverMessage.log]);
             }
         };
@@ -113,11 +124,11 @@ function BattlePage() {
                                     <div className="text-xs mb-1">HP</div>
                                     <div className="w-32 bg-gray-200 rounded-full h-2">
                                         <div
-                                            className={`h-2 rounded-full transition-all duration-300 ${getHpColor(getHpPercentage(enemyPokemon?.hp ?? 0, enemyPokemon?.maxHp ?? 1))}`}
-                                            style={{ width: `${getHpPercentage(enemyPokemon?.hp ?? 0, enemyPokemon?.maxHp ?? 1)}%` }}
+                                            className={`h-2 rounded-full transition-all duration-300 ${getHpColor(getHpPercentage(enemyPokemon?.currentHp ?? 0, enemyPokemon?.maxHp ?? 1))}`}
+                                            style={{ width: `${getHpPercentage(enemyPokemon?.currentHp ?? 0, enemyPokemon?.currentHp ?? 1)}%` }}
                                         ></div>
                                     </div>
-                                    <div className="text-xs text-right mt-1">{enemyPokemon?.hp ?? "?"}/{enemyPokemon?.maxHp ?? "?"}</div>
+                                    <div className="text-xs text-right mt-1">{enemyPokemon?.currentHp ?? "?"}/{enemyPokemon?.maxHp ?? "?"}</div>
                                 </div>
                             </div>
                             <img
@@ -144,11 +155,11 @@ function BattlePage() {
                                     <div className="text-xs mb-1">HP</div>
                                     <div className="w-40 bg-gray-200 rounded-full h-3">
                                         <div
-                                            className={`h-3 rounded-full transition-all duration-300 ${getHpColor(getHpPercentage(playerPokemon?.hp ?? 0, playerPokemon?.maxHp ?? 1))}`}
-                                            style={{ width: `${getHpPercentage(playerPokemon?.hp ?? 0, playerPokemon?.maxHp ?? 1)}%` }}
+                                            className={`h-3 rounded-full transition-all duration-300 ${getHpColor(getHpPercentage(playerPokemon?.currentHp ?? 0, playerPokemon?.maxHp ?? 1))}`}
+                                            style={{ width: `${getHpPercentage(playerPokemon?.currentHp ?? 0, playerPokemon?.maxHp ?? 1)}%` }}
                                         ></div>
                                     </div>
-                                    <div className="text-xs mt-1">{playerPokemon?.hp}/{playerPokemon?.maxHp}</div>
+                                    <div className="text-xs mt-1">{playerPokemon?.currentHp}/{playerPokemon?.maxHp}</div>
                                 </div>
                             </div>
                         </div>
@@ -215,18 +226,11 @@ function BattlePage() {
                                 <div className="space-y-3">
                                     <div className="text-lg font-semibold mb-3">Escolha um ataque:</div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <Button onClick={() => handleAttack('Thunderbolt')} className="bg-yellow-500 hover:bg-yellow-600">
-                                            ⚡ Thunderbolt
-                                        </Button>
-                                        <Button onClick={() => handleAttack('Quick Attack')} className="bg-yellow-500 hover:bg-yellow-600">
-                                            ⚡ Quick Attack
-                                        </Button>
-                                        <Button onClick={() => handleAttack('Thunder Wave')} className="bg-yellow-500 hover:bg-yellow-600">
-                                            ⚡ Thunder Wave
-                                        </Button>
-                                        <Button onClick={() => handleAttack('Agility')} className="bg-yellow-500 hover:bg-yellow-600">
-                                            ⚡ Agility
-                                        </Button>
+                                        {(playerPokemon?.moves ?? []).map((move) => (
+                                            <Button key={move} onClick={() => handleAttack(move)} className="bg-yellow-500 hover:bg-yellow-600">
+                                                {move}
+                                            </Button>
+                                        ))}
                                     </div>
                                     <Button
                                         onClick={() => setSelectedAction(null)}

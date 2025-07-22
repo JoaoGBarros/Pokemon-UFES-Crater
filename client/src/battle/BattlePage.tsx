@@ -257,7 +257,7 @@ function BattlePage() {
                                     </Button>
                                     <Button
 
-                                        onClick={() => navigate('/')}
+                                        onClick={() => navigate('/home')}
                                         className="h-16 text-lg font-semibold bg-gray-500 hover:bg-gray-600"
                                     >
                                         🏃 FUGIR

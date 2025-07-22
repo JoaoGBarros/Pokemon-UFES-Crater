@@ -41,7 +41,8 @@ public class GameState {
         }
 
 
-        double base = (((2.0 * level / 5 + 2) * power * attackStat / defenseStat) / 50) + 2;
+        double base = (((((2.0 * level) / 5) + 2) * power * attackStat / defenseStat) / 50) + 2;
+        if(base < 1) base = 1;
         return (int) (base * stab * typeModifier);
     }
 

@@ -10,4 +10,4 @@ RUN ./mvnw package -DskipTests || mvn package -DskipTests
 
 EXPOSE 8887
 
-CMD ["java", "-cp", "target/classes", "org.br.PokemonServer"]
+CMD ["java", "-jar", "target/server-1.0-SNAPSHOT.jar"]

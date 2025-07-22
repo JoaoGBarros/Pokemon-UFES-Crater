@@ -52,7 +52,7 @@ Após os contêineres estarem em execução, os serviços estarão disponíveis 
 | Serviço             | URL                    |
 | :------------------ | :----------------------|
 | **Frontend (UI)**   | `http://localhost:3000`|
-| **Servidor do Jogo**   | `ws://localhost:8888`|
+| **Servidor do Jogo**   | `ws://localhost:8887`|
 
 ## Funcionalidades Implementadas
 

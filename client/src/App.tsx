@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import BattlePage from './battle/BattlePage'
+import LoginPage from './login/LoginPage'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -15,7 +16,8 @@ function HomePage() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/home" element={<HomePage />} />
       <Route path="/battle" element={<BattlePage />} />
     </Routes>
   )

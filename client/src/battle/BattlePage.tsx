@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import battleBackground from '@/assets/battle_background/Game Boy Advance - Pokemon FireRed LeafGreen - Battle Backgrounds.png'
+import { WebSocketContext } from "@/WebSocketContext"
 
 interface Pokemon {
     name: string
@@ -19,102 +20,96 @@ function BattlePage() {
     const [enemyPokemon, setEnemyPokemon] = useState<Pokemon>()
     const [inProgress, setInProgress] = useState<boolean>(false)
     const [battleLog, setBattleLog] = useState<string[]>([])
-
-    const socket = useRef<WebSocket | null>(null);
+    const socket = useContext(WebSocketContext)
 
     useEffect(() => {
-        socket.current = new WebSocket("ws://localhost:8887");
 
-        socket.current.onopen = () => {
+        if (socket && socket.current) {
             const action = {
                 type: 'startRandomBattle',
                 payload: {}
             };
-            socket.current?.send(JSON.stringify(action));
-            console.log("Conectado ao servidor Java WebSocket!");
-        };
+            socket.current.send(JSON.stringify(action));
+            socket.current.onmessage = (event) => {
+                const serverMessage = JSON.parse(event.data);
+                switch (serverMessage.type) {
+                    case "battleStart":
+                        setPlayerPokemon({
+                            ...serverMessage.payload.player,
+                            maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                        });
+                        setEnemyPokemon({
+                            ...serverMessage.payload.enemy,
+                            maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                        });
+                        if (Array.isArray(serverMessage.payload.chatMessage)) {
+                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                            setBattleLog(serverMessage.payload.chatMessage);
+                        }
+                        setInProgress(true);
+                        break;
+                    case "battleState":
+                        if (serverMessage.payload.battleStatus == "BATTLE_ENDED") {
+                            setInProgress(false);
+                        }
+                        setPlayerPokemon({
+                            ...serverMessage.payload.player,
+                            maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                        });
+                        setEnemyPokemon({
+                            ...serverMessage.payload.enemy,
+                            maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                        });
 
-        socket.current.onmessage = (event) => {
-            const serverMessage = JSON.parse(event.data);
-            switch (serverMessage.type) {
-                case "battleStart":
-                    setPlayerPokemon({
-                        ...serverMessage.payload.player,
-                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
-                    });
-                    setEnemyPokemon({
-                        ...serverMessage.payload.enemy,
-                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
-                    });
-                    if (Array.isArray(serverMessage.payload.chatMessage)) {
-                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
-                        setBattleLog(serverMessage.payload.chatMessage);
-                    }
-                    setInProgress(true);
-                    break;
-                case "battleState":
-                    if (serverMessage.payload.battleStatus == "BATTLE_ENDED") {
-                        setInProgress(false);
-                    }
-                    setPlayerPokemon({
-                        ...serverMessage.payload.player,
-                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
-                    });
-                    setEnemyPokemon({
-                        ...serverMessage.payload.enemy,
-                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
-                    });
+                        if (Array.isArray(serverMessage.payload.chatMessage)) {
+                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                            setBattleLog(serverMessage.payload.chatMessage);
+                        }
 
-                    if (Array.isArray(serverMessage.payload.chatMessage)) {
-                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
-                        setBattleLog(serverMessage.payload.chatMessage);
-                    }
-
-                    break;
-                case "chatMessage":
-                    if (Array.isArray(serverMessage.payload)) {
-                        setBattleLog(serverMessage.payload.filter(msg => typeof msg === 'string'));
-                    } else if (typeof serverMessage.payload === 'string') {
-                        setBattleLog(serverMessage.payload);
-                    }
-                    break;
-                default:
-                    if (serverMessage.payload.battleStatus === "BATTLE_ENDED") {
-                        setInProgress(false);
-                    }
-                    setPlayerPokemon({
-                        ...serverMessage.payload.player,
-                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
-                    });
-                    setEnemyPokemon({
-                        ...serverMessage.payload.enemy,
-                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
-                    });
-                    setInProgress(true);
+                        break;
+                    case "chatMessage":
+                        if (Array.isArray(serverMessage.payload)) {
+                            setBattleLog(serverMessage.payload.filter(msg => typeof msg === 'string'));
+                        } else if (typeof serverMessage.payload === 'string') {
+                            setBattleLog(serverMessage.payload);
+                        }
+                        break;
+                    default:
+                        if (serverMessage.payload.battleStatus === "BATTLE_ENDED") {
+                            setInProgress(false);
+                        }
+                        setPlayerPokemon({
+                            ...serverMessage.payload.player,
+                            maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                        });
+                        setEnemyPokemon({
+                            ...serverMessage.payload.enemy,
+                            maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                        });
+                        setInProgress(true);
 
 
-                    if (Array.isArray(serverMessage.payload.chatMessage)) {
-                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
-                        setBattleLog(serverMessage.payload.chatMessage);
-                    }
-            }
-        };
-
-        return () => {
-            socket.current?.close();
-        };
+                        if (Array.isArray(serverMessage.payload.chatMessage)) {
+                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                            setBattleLog(serverMessage.payload.chatMessage);
+                        }
+                }
+            };
+        }
     }, []);
 
 
     const handleAttack = (attack: string) => {
-        const action = {
-            type: 'battleCommand',
-            payload: ["attack", attack],
-        };
-        socket.current?.send(JSON.stringify(action));
+
+        if(socket && socket.current){
+            socket.current.send(JSON.stringify({
+                type: "battleCommand",
+                payload: ["attack", attack],
+            }));
+        }
     };
 
     const handleAction = (action: string) => {
@@ -127,14 +122,14 @@ function BattlePage() {
         const input = e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement;
         const message = input.value.trim();
 
-        if (message && socket.current) {
-            const chatAction = {
+        if(message && socket && socket.current) {
+            socket.current.send(JSON.stringify({
                 type: 'chat',
                 payload: message
-            };
-            socket.current.send(JSON.stringify(chatAction));
-            input.value = '';
+            }));
         }
+
+        input.value = '';
     };
 
 
@@ -228,7 +223,7 @@ function BattlePage() {
                                 </form>
                                 {!inProgress ?
                                     <Button
-                                        onClick={() => navigate("/")}
+                                        onClick={() => navigate("/home")}
                                         variant="outline"
                                         className="w-full"
                                     >

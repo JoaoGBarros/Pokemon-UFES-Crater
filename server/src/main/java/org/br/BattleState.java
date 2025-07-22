@@ -117,7 +117,7 @@ public class BattleState {
         return battleStatus;
     }
 
-    public void addMessage(String message) {
-        this.log.add(player.name + ": " + message);
+    public void addMessage(String nickname, String message) {
+        this.log.add(nickname + ": " + message);
     }
 }

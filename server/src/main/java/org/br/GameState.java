@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class GameState {
     private BattleState battleState;
+    private Player player;
 
     public JSONObject startRandomBattle(WebSocket conn) {
         System.out.println("Iniciando batalha aleatória...");
@@ -38,8 +39,9 @@ public class GameState {
         }
     }
 
-    public GameState(){
+    public GameState(Player player){
         this.battleState = new BattleState();
+        this.player = player;
     }
 
     public JSONObject toJson() {
@@ -64,7 +66,7 @@ public class GameState {
         if(battleState.getBattleStatus() == BattleStatus.BATTLE_STARTED ||
                 battleState.getBattleStatus() == BattleStatus.BATTLE_IN_PROGRESS ||
                 battleState.getBattleStatus() == BattleStatus.BATTLE_ENDED) {
-            this.battleState.addMessage(message);
+            this.battleState.addMessage(player.getNickname(), message);
         } else {
             System.out.println("Batalha não iniciada ou já finalizada.");
         }

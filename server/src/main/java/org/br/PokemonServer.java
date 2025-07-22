@@ -6,6 +6,7 @@ import org.java_websocket.server.WebSocketServer;
 import org.json.JSONObject;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,9 +21,7 @@ public class PokemonServer extends WebSocketServer {
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         System.out.println("Novo jogador conectado: " + conn.getRemoteSocketAddress());
-        GameState gameState = new GameState();
-        playerStates.put(conn, gameState);
-        conn.send(gameState.toJson().toString());
+        playerStates.put(conn, new GameState());
     }
 
     @Override
@@ -39,29 +38,31 @@ public class PokemonServer extends WebSocketServer {
         GameState gameState = playerStates.get(conn);
 
         switch (messageType) {
-            case "attack":
-                String attackName = receivedJson.getString("payload");
-                JSONObject attackJson = new JSONObject();
-                attackJson.put("type", "battleUpdate");
-                attackJson.put("payload", gameState.toJson());
-                conn.send(attackJson.toString());
+            case "startRandomBattle":
+                JSONObject battleStartJson = gameState.startRandomBattle(conn);
+                conn.send(battleStartJson.toString());
+                break;
+            case "battleCommand":
+                List<String> command = receivedJson.getJSONArray("payload").toList()
+                        .stream().map(Object::toString).toList();
+                JSONObject responseJson = new JSONObject();
+                responseJson.put("type", "chatMessage");
+                responseJson.put("payload", gameState.getBattleLog());
+                conn.send(responseJson.toString());
+
                 new Thread(() -> {
                     try {
                         Thread.sleep(10);
-                        gameState.processAttack(attackName);
+                        gameState.processCommand(command);
                         conn.send(gameState.toJson().toString());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }).start();
                 break;
-
             case "chat":
                 String chatMessage = receivedJson.getString("payload");
-                JSONObject chatJson = new JSONObject();
-                chatJson.put("type", "chatMessage");
-                chatJson.put("payload", "Jogador: " + chatMessage);
-                broadcast(chatJson.toString());
+                broadcast(gameState.sendMessage(chatMessage).toString());
                 break;
 
             default:

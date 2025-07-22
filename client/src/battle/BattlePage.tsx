@@ -17,10 +17,8 @@ function BattlePage() {
     const [selectedAction, setSelectedAction] = useState<string | null>(null)
     const [playerPokemon, setPlayerPokemon] = useState<Pokemon>()
     const [enemyPokemon, setEnemyPokemon] = useState<Pokemon>()
-    const [battleLog, setBattleLog] = useState<string[]>([
-        "Um Pokémon selvagem apareceu!",
-        "Vá, Pikachu!"
-    ])
+    const [inProgress, setInProgress] = useState<boolean>(false)
+    const [battleLog, setBattleLog] = useState<string[]>([])
 
     const socket = useRef<WebSocket | null>(null);
 
@@ -28,43 +26,80 @@ function BattlePage() {
         socket.current = new WebSocket("ws://localhost:8887");
 
         socket.current.onopen = () => {
+            const action = {
+                type: 'startRandomBattle',
+                payload: {}
+            };
+            socket.current?.send(JSON.stringify(action));
             console.log("Conectado ao servidor Java WebSocket!");
         };
 
         socket.current.onmessage = (event) => {
             const serverMessage = JSON.parse(event.data);
             switch (serverMessage.type) {
-                case "battleUpdate":
-                    if (serverMessage.battleStatus == 'Finished') {
-                        navigate("/");
-                    } else {
-                        setPlayerPokemon({
-                            ...serverMessage.player,
-                            maxHp: serverMessage.player.stats?.hp ?? serverMessage.player.stats.hp
-                        });
-                        setEnemyPokemon({
-                            ...serverMessage.enemy,
-                            maxHp: serverMessage.enemy.stats?.maxHp ?? serverMessage.enemy.stats.maxHp
-                        });
-                        setBattleLog(prev => [...prev, serverMessage.log]);
+                case "battleStart":
+                    setPlayerPokemon({
+                        ...serverMessage.payload.player,
+                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                    });
+                    setEnemyPokemon({
+                        ...serverMessage.payload.enemy,
+                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                    });
+                    if (Array.isArray(serverMessage.payload.chatMessage)) {
+                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                        setBattleLog(serverMessage.payload.chatMessage);
                     }
+                    setInProgress(true);
                     break;
-                case "chatMessage":
-                    setBattleLog(prev => [...prev, serverMessage.payload]);
-                    break;
-                default:
-                    if (serverMessage.battleStatus === 'Finished') {
-                        navigate("/");
+                case "battleState":
+                    if (serverMessage.payload.battleStatus == "BATTLE_ENDED") {
+                        setInProgress(false);
                     }
                     setPlayerPokemon({
-                            ...serverMessage.player,
-                            maxHp: serverMessage.player.stats?.hp ?? serverMessage.player.stats.hp
-                        });
-                        setEnemyPokemon({
-                            ...serverMessage.enemy,
-                            maxHp: serverMessage.enemy.stats?.hp ?? serverMessage.enemy.stats.hp
-                        });
-                    setBattleLog(prev => [...prev, serverMessage.log]);
+                        ...serverMessage.payload.player,
+                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                    });
+                    setEnemyPokemon({
+                        ...serverMessage.payload.enemy,
+                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                    });
+
+                    if (Array.isArray(serverMessage.payload.chatMessage)) {
+                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                        setBattleLog(serverMessage.payload.chatMessage);
+                    }
+
+                    break;
+                case "chatMessage":
+                    if (Array.isArray(serverMessage.payload)) {
+                        setBattleLog(serverMessage.payload.filter(msg => typeof msg === 'string'));
+                    } else if (typeof serverMessage.payload === 'string') {
+                        setBattleLog(serverMessage.payload);
+                    }
+                    break;
+                default:
+                    if (serverMessage.payload.battleStatus === "BATTLE_ENDED") {
+                        setInProgress(false);
+                    }
+                    setPlayerPokemon({
+                        ...serverMessage.payload.player,
+                        maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
+                    });
+                    setEnemyPokemon({
+                        ...serverMessage.payload.enemy,
+                        maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
+                    });
+                    setInProgress(true);
+
+
+                    if (Array.isArray(serverMessage.payload.chatMessage)) {
+                        setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
+                    } else if (typeof serverMessage.payload.chatMessage === 'string') {
+                        setBattleLog(serverMessage.payload.chatMessage);
+                    }
             }
         };
 
@@ -76,8 +111,8 @@ function BattlePage() {
 
     const handleAttack = (attack: string) => {
         const action = {
-            type: 'attack',
-            payload: attack,
+            type: 'battleCommand',
+            payload: ["attack", attack],
         };
         socket.current?.send(JSON.stringify(action));
     };
@@ -191,9 +226,18 @@ function BattlePage() {
                                         className="rounded-r-lg bg-blue-500 text-white px-4 py-2 font-semibold hover:bg-blue-600"
                                     >Enviar</button>
                                 </form>
+                                {!inProgress ?
+                                    <Button
+                                        onClick={() => navigate("/")}
+                                        variant="outline"
+                                        className="w-full"
+                                    >
+                                        ← Voltar
+                                    </Button>
+                                    : null}
                             </div>
                         </div>
-                        <div className="order-1 lg:order-2">
+                        <div className="order-1 lg:order-2" style={{ display: inProgress ? 'block' : 'none' }}>
                             {!selectedAction ? (
                                 <div className="grid grid-cols-2 gap-3">
                                     <Button

@@ -1,0 +1,13 @@
+package org.br;
+
+public enum BattleStatus {
+    WAITING_FOR_PLAYER,
+    BATTLE_IN_PROGRESS,
+    BATTLE_ENDED,
+    BATTLE_STARTED,
+    GAME_OVER,
+    GAME_WON,
+    GAME_LOST,
+    RANDOM_BATTLE_STARTED,
+    RANDOM_BATTLE_ENDED
+}

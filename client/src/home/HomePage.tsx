@@ -12,6 +12,9 @@ function HomePage() {
     const [dropdownOpen, setDropdownOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<string | null>(null)
     const [sidePanelOpen, setSidePanelOpen] = useState(false)
+    const [invites, setInvites] = useState<{from: string, message: string}[]>([])
+    const [inviteModalOpen, setInviteModalOpen] = useState(false)
+    const [currentInvite, setCurrentInvite] = useState<{from: string, message: string} | null>(null)
     const chatEndRef = useRef<HTMLDivElement>(null)
 
     if (socket && socket.current) {
@@ -21,6 +24,7 @@ function HomePage() {
                 case "currentPlayers":
                     setOnlineUsers(serverMessage.payload);
                     break;
+
                 case "globalChat":
                     if (Array.isArray(serverMessage.payload)) {
                         setMessages(serverMessage.payload.filter(msg => typeof msg === 'string'));
@@ -28,12 +32,28 @@ function HomePage() {
                         setMessages([serverMessage.payload]);
                     }
                     break;
+                
+                case "battleRequest":
+                    setInvites(prev => [...prev, {
+                        from: serverMessage.payload,
+                        message: `Você foi desafiado para uma batalha por ${serverMessage.payload}`
+                    }])
+                    break;
+                
+                case "battleState":
+                    if(serverMessage.payload.battleStatus === "BATTLE_STARTED" || serverMessage.payload.battleStatus === "BATTLE_IN_PROGRESS") {
+                        navigate('/battle');
+                    }
+
+                 case "startPvpBattle":
+                    const { battleId } = serverMessage.payload;
+                    navigate('/battle', { state: { pvpBattleId: battleId } });
+                    break;
             }
         };
     }
 
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
         if (socket && socket.current) {
             socket.current.send(JSON.stringify({
                 type: "retrieveCurrentPlayers"
@@ -64,11 +84,33 @@ function HomePage() {
     const handleChallenge = () => {
         if (selectedUser && socket && socket.current && socket.current.readyState === WebSocket.OPEN) {
             socket.current.send(JSON.stringify({
-                type: "challenge_request",
-                to: selectedUser
+                type: "requestBattle",
+                payload: selectedUser
             }))
             setSidePanelOpen(false)
         }
+    }
+
+    const handleOpenInviteModal = () => {
+        if (invites.length > 0) {
+            setCurrentInvite(invites[0])
+            setInviteModalOpen(true)
+        }
+    }
+
+    const handleInviteResponse = (accept: boolean) => {
+        if (currentInvite && socket && socket.current && socket.current.readyState === WebSocket.OPEN) {
+            socket.current.send(JSON.stringify({
+                type: "inviteResponse",
+                payload: {
+                    from: currentInvite.from,
+                    accept: accept
+                }
+            }))
+        }
+        setInvites(prev => prev.slice(1))
+        setInviteModalOpen(false)
+        setCurrentInvite(null)
     }
 
     return (
@@ -93,12 +135,27 @@ function HomePage() {
                         <Button type="submit">Enviar</Button>
                     </form>
                 </div>
-                <div className="relative">
+                <div className="relative flex flex-row items-center gap-2">
                     <Button onClick={() => setDropdownOpen(v => !v)}>
                         Usuários Online
                     </Button>
+                    <button
+                        className="relative ml-2 p-2 rounded-full bg-white border hover:bg-gray-100"
+                        onClick={handleOpenInviteModal}
+                        disabled={invites.length === 0}
+                        title="Convites de batalha"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12v2.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        {invites.length > 0 && (
+                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                                {invites.length}
+                            </span>
+                        )}
+                    </button>
                     {dropdownOpen && (
-                        <div className="absolute z-10 mt-2 w-48 bg-white border rounded shadow">
+                        <div className="absolute z-10 mt-2 w-48 bg-white border rounded shadow left-0">
                             {onlineUsers.length === 0 && (
                                 <div className="px-4 py-2 text-gray-500">Nenhum usuário online</div>
                             )}
@@ -127,6 +184,17 @@ function HomePage() {
                     </div>
                     <div className="flex-1 flex flex-col justify-center items-center">
                         <Button onClick={handleChallenge}>Desafiar para batalha</Button>
+                    </div>
+                </div>
+            )}
+            {inviteModalOpen && currentInvite && (
+                <div className="fixed inset-0 flex items-center justify-center z-30 bg-black bg-opacity-30">
+                    <div className="bg-white rounded-lg shadow-lg p-8 flex flex-col items-center">
+                        <div className="mb-4 text-lg font-semibold">{currentInvite.message}</div>
+                        <div className="flex gap-4">
+                            <Button onClick={() => handleInviteResponse(true)}>Sim</Button>
+                            <Button variant="secondary" onClick={() => handleInviteResponse(false)}>Não</Button>
+                        </div>
                     </div>
                 </div>
             )}

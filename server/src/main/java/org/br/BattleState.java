@@ -6,17 +6,17 @@ import java.util.List;
 import java.util.Map;
 
 public class BattleState {
-    private Pokemon player;
-    private Pokemon enemy;
+    private Pokemon p1;
+    private Pokemon p2;
     private BattleStatus battleStatus = BattleStatus.WAITING_FOR_PLAYER;
     private int turn = 0;
     private List<String> log = new java.util.ArrayList<>();
 
     public void startRandomBattle() {
-        System.out.println("A batalha começou entre " + player.name + " e " + enemy.name + "!");
+        System.out.println("A batalha começou entre " + p1.name + " e " + p2.name + "!");
 
         this.log.add("Um Pokémon selvagem apareceu!");
-        this.log.add("Vá, " + player.name + "!");
+        this.log.add("Vá, " + p1.name + "!");
         this.battleStatus = BattleStatus.BATTLE_STARTED;
     }
 
@@ -31,7 +31,7 @@ public class BattleState {
         return modifier;
     }
 
-    private int calculateDamage(Pokemon attacker, Pokemon defender, String attackName) {
+    public int calculateDamage(Pokemon attacker, Pokemon defender, String attackName) {
         Map<String, ?> move = attacker.moves.get(attackName);
         int power = (int) move.get("power");
         String type = (String) move.get("type");
@@ -55,30 +55,30 @@ public class BattleState {
     }
 
     public void processPlayerAttack(String attackName) {
-        int damage = calculateDamage(player, enemy, attackName);
-        this.enemy.currentHp -= damage;
-        this.log.add(player.name + " usou " + attackName + " e causou " + damage + " de dano!");
-        if(this.enemy.currentHp <= 0) {
-            this.enemy.currentHp = 0;
+        int damage = calculateDamage(p1, p2, attackName);
+        this.p2.currentHp -= damage;
+        this.log.add(p1.name + " usou " + attackName + " e causou " + damage + " de dano!");
+        if(this.p2.currentHp <= 0) {
+            this.p2.currentHp = 0;
             this.battleStatus = BattleStatus.BATTLE_ENDED;
         }
 
     }
 
     public void processEnemyAttack() {
-        List<String> enemyMoves = List.copyOf(enemy.moves.keySet());
+        List<String> enemyMoves = List.copyOf(p2.moves.keySet());
         String attackName = enemyMoves.get((int) (Math.random() * enemyMoves.size() - 1));
-        int damage = calculateDamage(enemy, player, attackName);
-        this.player.currentHp -= damage;
-        if(this.player.currentHp <= 0) {
-            this.player.currentHp = 0;
+        int damage = calculateDamage(p2, p1, attackName);
+        this.p1.currentHp -= damage;
+        if(this.p1.currentHp <= 0) {
+            this.p1.currentHp = 0;
             this.battleStatus = BattleStatus.BATTLE_ENDED;
         }
-        this.log.add(enemy.name + " revidou e causou " + damage + " de dano!");
+        this.log.add(p2.name + " revidou e causou " + damage + " de dano!");
     }
 
     public void processAttack(String attackName) {
-        if(player.stats.get("speed") > enemy.stats.get("speed")) {
+        if(p1.stats.get("speed") > p2.stats.get("speed")) {
             processPlayerAttack(attackName);
             if(battleStatus.equals(BattleStatus.BATTLE_ENDED)) return;
             processEnemyAttack();
@@ -93,11 +93,11 @@ public class BattleState {
 
     public JSONObject toJson() {
         JSONObject state = new JSONObject();
-        state.put("player", player.toJson());
-        state.put("enemy", enemy.toJson());
+        state.put("player", p1.toJson());
+        state.put("enemy", p2.toJson());
         state.put("battleStatus", this.battleStatus);
         if(battleStatus.equals(BattleStatus.BATTLE_ENDED)) {
-            String winner = player.currentHp > 0 ? player.name : enemy.name;
+            String winner = p1.currentHp > 0 ? p1.name : p2.name;
             this.log.add(winner + " venceu a batalha!");
         }
         state.put("chatMessage", this.log);
@@ -105,8 +105,8 @@ public class BattleState {
     }
 
     public BattleState() {
-        player = AvailablePokemon.PIKACHU.copy();
-        enemy = AvailablePokemon.CHARMANDER.copy();
+        p1 = AvailablePokemon.PIKACHU.copy();
+        p2 = AvailablePokemon.CHARMANDER.copy();
     }
 
     public List<String> getLog() {
@@ -120,4 +120,34 @@ public class BattleState {
     public void addMessage(String nickname, String message) {
         this.log.add(nickname + ": " + message);
     }
+
+    public void setBattleStatus(BattleStatus battleStatus) {
+        this.battleStatus = battleStatus;
+    }
+
+    public void setP1(Pokemon p1) {
+        this.p1 = p1;
+    }
+
+    public void setP2(Pokemon p2) {
+        this.p2 = p2;
+
+    }
+
+    public Pokemon getP1() {
+        return p1;
+    }
+
+    public Pokemon getP2() {
+        return p2;
+    }
+    public void incrementTurn() {
+        this.turn++;
+    }
+
+    public int getTurn() {
+        return turn;
+    }
+
+
 }

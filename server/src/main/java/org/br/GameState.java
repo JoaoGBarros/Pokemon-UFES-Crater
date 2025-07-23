@@ -9,6 +9,7 @@ import java.util.Map;
 public class GameState {
     private BattleState battleState;
     private final Player player;
+    private String pvpBattleId = null;
 
     public JSONObject startRandomBattle(WebSocket conn) {
         System.out.println("Iniciando batalha aleatória...");
@@ -75,6 +76,14 @@ public class GameState {
 
     public Player getPlayer() {
         return player;
+    }
+
+    public String getPvpBattleId() {
+        return pvpBattleId;
+    }
+
+    public void setPvpBattleId(String pvpBattleId) {
+        this.pvpBattleId = pvpBattleId;
     }
 
 }

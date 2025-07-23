@@ -13,13 +13,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PokemonServer extends WebSocketServer {
 
     private final Map<WebSocket, GameState> playerStates = new ConcurrentHashMap<>();
+    private final Map<String, PvpBattleState> activePvpBattles = new ConcurrentHashMap<>();
     private List<String> globalChatMessages = new ArrayList<>();
     private Connection dbConnection;
+
 
     public PokemonServer(int port) {
         super(new InetSocketAddress(port));
@@ -48,6 +51,8 @@ public class PokemonServer extends WebSocketServer {
         System.out.println("Jogador desconectado: " + conn.getRemoteSocketAddress());
         globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
         playerStates.remove(conn);
+        broadcastGlobalChat();
+        broadcastCurrentPlayers();
     }
 
     @Override
@@ -57,20 +62,29 @@ public class PokemonServer extends WebSocketServer {
         String messageType = receivedJson.getString("type");
         GameState gameState = playerStates.get(conn);
 
+
+        if (gameState != null && gameState.getPvpBattleId() != null) {
+            PvpBattleState pvpBattle = activePvpBattles.get(gameState.getPvpBattleId());
+            if (pvpBattle != null) {
+                switch (messageType) {
+                    case "connectToPvpBattle":
+                        pvpBattle.setPlayerReady(gameState.getPlayer().getNickname());
+                        break;
+                    case "battleCommand":
+                        String move = receivedJson.getJSONArray("payload").getString(1);
+                        pvpBattle.submitMove(gameState.getPlayer().getNickname(), move);
+                        break;
+                    case "cancelMove":
+                        pvpBattle.cancelMove(gameState.getPlayer().getNickname());
+                        break;
+                }
+            }
+        }
+
+
         switch (messageType) {
             case "retrieveCurrentPlayers":
-                JSONObject playersJson = new JSONObject();
-                playersJson.put("type", "currentPlayers");
-                playersJson.put("payload", playerStates.values().stream().map(
-                        state -> state.getPlayer().getNickname()
-                ).toList());
-                conn.send(playersJson.toString());
-                break;
-            case "retrieveGlobalChat":
-                JSONObject globalChatJson = new JSONObject();
-                globalChatJson.put("type", "globalChat");
-                globalChatJson.put("payload", globalChatMessages);
-                broadcast(globalChatJson.toString());
+                broadcastCurrentPlayers();
                 break;
             case "login":
                 String nickname = receivedJson.getJSONObject("payload").getString("nickname");
@@ -88,6 +102,8 @@ public class PokemonServer extends WebSocketServer {
                 playerStates.put(conn, new GameState(player));
                 globalChatMessages.add(nickname + " entrou no jogo.");
                 conn.send(loginResponse.toString());
+                broadcastGlobalChat();
+                broadcastCurrentPlayers();
                 break;
 
             case "startRandomBattle":
@@ -122,11 +138,64 @@ public class PokemonServer extends WebSocketServer {
             case "chat":
                 String mensagem = receivedJson.getString("payload");
                 globalChatMessages.add(gameState.getPlayer().getNickname() + ": " + mensagem);
-                JSONObject globalChat = new JSONObject();
-                globalChat.put("type", "globalChat");
-                globalChat.put("payload", globalChatMessages);
-                broadcast(globalChat.toString());
+                broadcastGlobalChat();
                 break;
+
+            case "retrieveGlobalChat":
+                broadcastGlobalChat();
+                break;
+
+
+            case "requestBattle":
+                String targetNickname = receivedJson.getString("payload");
+                WebSocket targetConn = getConnByNickname(targetNickname);
+
+                if (targetConn != null) {
+                    JSONObject requestJson = new JSONObject();
+                    requestJson.put("type", "battleRequest");
+                    requestJson.put("payload", gameState.getPlayer().getNickname());
+                    targetConn.send(requestJson.toString());
+                } else {
+                    JSONObject errorJson = new JSONObject();
+                    errorJson.put("type", "battleError");
+                    errorJson.put("payload", "Jogador não encontrado.");
+                    conn.send(errorJson.toString());
+                }
+                break;
+
+
+            case "inviteResponse":
+                String challengerNickname = receivedJson.getJSONObject("payload").getString("from");
+                boolean accepted = receivedJson.getJSONObject("payload").getBoolean("accept");
+                WebSocket challengerConn = getConnByNickname(challengerNickname);
+
+                if (challengerConn != null && accepted) {
+                    GameState challengerGameState = playerStates.get(challengerConn);
+
+                    String battleId = UUID.randomUUID().toString();
+                    PvpBattleState newPvpBattle = new PvpBattleState(
+                            challengerGameState, challengerConn,
+                            gameState, conn,
+                            (endedBattle) -> activePvpBattles.remove(battleId) // Callback para limpar a batalha quando acabar
+                    );
+
+                    activePvpBattles.put(battleId, newPvpBattle);
+                    challengerGameState.setPvpBattleId(battleId);
+                    gameState.setPvpBattleId(battleId);
+
+                    JSONObject battleReadyMsg = new JSONObject();
+                    battleReadyMsg.put("type", "startPvpBattle");
+                    battleReadyMsg.put("payload", new JSONObject().put("battleId", battleId));
+
+                    challengerConn.send(battleReadyMsg.toString());
+                    conn.send(battleReadyMsg.toString());
+                    globalChatMessages.add("O pedido de " + gameState.getPlayer().getNickname() + " foi aceito por " + challengerNickname);
+                } else {
+                    globalChatMessages.add(gameState.getPlayer().getNickname() + " recusou o convite para a batalha.");
+                }
+                broadcastGlobalChat();
+                break;
+
 
             default:
                 System.out.println("Tipo de mensagem desconhecido: " + messageType);
@@ -148,6 +217,29 @@ public class PokemonServer extends WebSocketServer {
         int port = 8887;
         PokemonServer server = new PokemonServer(port);
         server.start();
+    }
+
+    private void broadcastGlobalChat() {
+        JSONObject globalChat = new JSONObject();
+        globalChat.put("type", "globalChat");
+        globalChat.put("payload", globalChatMessages);
+        broadcast(globalChat.toString());
+    }
+
+    private void broadcastCurrentPlayers() {
+        JSONObject playersJson = new JSONObject();
+        playersJson.put("type", "currentPlayers");
+        playersJson.put("payload", playerStates.values().stream()
+                .map(state -> state.getPlayer().getNickname()).toList());
+        broadcast(playersJson.toString());
+    }
+
+    private WebSocket getConnByNickname(String nickname) {
+        return playerStates.entrySet().stream()
+                .filter(entry -> entry.getValue().getPlayer().getNickname().equals(nickname))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
     }
 
 }

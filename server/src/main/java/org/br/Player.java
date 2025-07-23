@@ -10,6 +10,7 @@ public class Player implements Serializable {
     private String nickname;
     private int posX = 0;
     private int posY = 0;
+    private Pokemon pokemon;
 
     public Player(int id, String nickname, int posX, int posY) {
         this.id = id;
@@ -33,6 +34,14 @@ public class Player implements Serializable {
         json.put("posX", posX);
         json.put("posY", posY);
         return json;
+    }
+
+    public Pokemon getPokemon() {
+        return pokemon;
+    }
+
+    public void setPokemon(Pokemon pokemon) {
+        this.pokemon = pokemon;
     }
 
 }

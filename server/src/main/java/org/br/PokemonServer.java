@@ -32,7 +32,7 @@ public class PokemonServer extends WebSocketServer {
                     "CREATE TABLE IF NOT EXISTS players (" +
                             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                             "nickname TEXT UNIQUE NOT NULL," +
-                            "posX INTEGER DEFAULT 1," + // Posição inicial segura
+                            "posX INTEGER DEFAULT 1," +
                             "posY INTEGER DEFAULT 1" +
                             ")"
             );
@@ -107,7 +107,7 @@ public class PokemonServer extends WebSocketServer {
 
         switch (messageType) {
             case "move":
-                handleMove(gameState, receivedJson);
+                handleMove(conn, gameState, receivedJson);
                 break;
             case "requestInitialState":
                  sendInitialPlayers(conn);
@@ -259,13 +259,10 @@ public class PokemonServer extends WebSocketServer {
         
         Player player = Auth.login(nickname, dbConnection);
 
-        // *** CORREÇÃO ADICIONADA AQUI ***
-        // Verifica se a posição do jogador é válida. Se não for, redefine para um ponto seguro.
         if (!MapManager.isPositionValid(player.getPosX(), player.getPosY())) {
-            System.out.println("Posição inválida detectada para " + nickname + " (" + player.getPosX() + "," + player.getPosY() + "). Resetando para (1, 1).");
+            System.out.println("Posição inválida para " + nickname + ". Resetando para (1, 1).");
             player.setPosX(1);
             player.setPosY(1);
-            // Opcional: Adicionar lógica para salvar essa posição corrigida no banco de dados.
         }
         player.setPokemon(Pokemon.getByName(chosenPokemon).copy());
         playerStates.put(conn, new GameState(player));
@@ -285,7 +282,7 @@ public class PokemonServer extends WebSocketServer {
         broadcastChat();
     }
 
-    private void handleMove(GameState gameState, JSONObject receivedJson) {
+    private void handleMove(WebSocket conn, GameState gameState, JSONObject receivedJson) {
         String direction = receivedJson.getJSONObject("payload").getString("direction");
         Player playerToMove = gameState.getPlayer();
         
@@ -307,6 +304,13 @@ public class PokemonServer extends WebSocketServer {
             moveResponse.put("type", "playerMoved");
             moveResponse.put("payload", playerToMove.toJSON());
             broadcast(moveResponse.toString());
+
+            // Após um movimento válido, verifica se um encontro acontece
+            if (MapManager.checkAndTriggerEncounter(newX, newY)) {
+                JSONObject encounterMsg = new JSONObject();
+                encounterMsg.put("type", "wildBattleStart");
+                conn.send(encounterMsg.toString()); // Envia apenas para o jogador que encontrou o Pokémon
+            }
         }
     }
 

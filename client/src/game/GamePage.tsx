@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState, useRef } from 'react';
 import { WebSocketContext } from '@/WebSocketContext';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
+import mapBackground from '@/assets/Mapa0.png'; // Importe a imagem do mapa
 
 // Interface para o objeto Player
 interface Player {
@@ -15,7 +16,6 @@ interface Player {
 const TILE_SIZE = 32;
 const MAP_WIDTH_TILES = 20;
 const MAP_HEIGHT_TILES = 40;
-
 // Componente para renderizar um único jogador
 const PlayerSprite: React.FC<{ player: Player }> = ({ player }) => (
     <div
@@ -49,7 +49,9 @@ const Map: React.FC<{ players: Player[] }> = ({ players }) => (
         width: `${MAP_WIDTH_TILES * TILE_SIZE}px`,
         height: `${MAP_HEIGHT_TILES * TILE_SIZE}px`,
         border: '2px solid black',
-        background: '#a0d080',
+        // Use a imagem importada como fundo
+        backgroundImage: `url(${mapBackground})`,
+        backgroundSize: 'cover', // Garante que a imagem cubra toda a área
         overflow: 'hidden'
     }}>
         {players.map(player => <PlayerSprite key={player.id} player={player} />)}
@@ -109,7 +111,6 @@ function GamePage() {
             // Define o message handler específico para a página de jogo
             socket.current.onmessage = (event) => {
                 const serverMessage = JSON.parse(event.data);
-                console.log("GamePage received message: ", serverMessage); // Log para depuração
                 
                 switch (serverMessage.type) {
                     case 'allPlayers':

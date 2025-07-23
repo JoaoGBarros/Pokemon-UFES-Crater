@@ -77,8 +77,6 @@ function BattlePage() {
                         break;
                 }
             };
-
-            socket.current.send(JSON.stringify({ type: 'startRandomBattle' }));
         }
     
         return () => {

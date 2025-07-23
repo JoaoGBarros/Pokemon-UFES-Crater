@@ -144,7 +144,7 @@ function GamePage() {
                     }
 
                 case "startPvpBattle":
-                    const { battleId } = serverMessage.payload;
+                    const battleId = serverMessage.payload.battleId;
                     navigate('/battle', { state: { pvpBattleId: battleId } });
                     break;
             }

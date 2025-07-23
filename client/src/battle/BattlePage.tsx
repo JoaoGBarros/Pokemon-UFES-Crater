@@ -27,7 +27,6 @@ function BattlePage() {
     const { pvpBattleId } = location.state || {}
 
     useEffect(() => {
-
         if (socket && socket.current) {
             if (pvpBattleId) {
                 console.log("Conectando à batalha PvP:", pvpBattleId);
@@ -46,28 +45,17 @@ function BattlePage() {
 
             socket.current.onmessage = (event) => {
                 const serverMessage = JSON.parse(event.data);
+                console.log("BattlePage received message: ", serverMessage); // Log para depuração
+
                 switch (serverMessage.type) {
                     case "battleStart":
-                        setPlayerPokemon({
-                            ...serverMessage.payload.player,
-                            maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
-                        });
-                        setEnemyPokemon({
-                            ...serverMessage.payload.enemy,
-                            maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
-                        });
-                        if (Array.isArray(serverMessage.payload.chatMessage)) {
-                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
-                            setBattleLog(serverMessage.payload.chatMessage);
-                        }
-                        setInProgress(true);
-                        break;
                     case "battleState":
                         setMoveSubmitted(false);
                         setWaitingForOpponent(false);
                         if (serverMessage.payload.battleStatus == "BATTLE_ENDED") {
                             setInProgress(false);
+                        } else {
+                            setInProgress(true);
                         }
                         setPlayerPokemon({
                             ...serverMessage.payload.player,
@@ -77,46 +65,31 @@ function BattlePage() {
                             ...serverMessage.payload.enemy,
                             maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
                         });
-
                         if (Array.isArray(serverMessage.payload.chatMessage)) {
-                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
                             setBattleLog(serverMessage.payload.chatMessage);
                         }
                         setInProgress(true);
                         setSelectedAction(null);
                         break;
                     case "chatMessage":
-                        if (Array.isArray(serverMessage.payload)) {
-                            setBattleLog(serverMessage.payload.filter(msg => typeof msg === 'string'));
-                        } else if (typeof serverMessage.payload === 'string') {
+                         if (Array.isArray(serverMessage.payload)) {
                             setBattleLog(serverMessage.payload);
                         }
                         break;
-                    default:
-                        if (serverMessage.payload.battleStatus === "BATTLE_ENDED") {
-                            setInProgress(false);
-                        }
-                        setPlayerPokemon({
-                            ...serverMessage.payload.player,
-                            maxHp: serverMessage.payload.player.stats?.hp ?? serverMessage.payload.player.currentHp
-                        });
-                        setEnemyPokemon({
-                            ...serverMessage.payload.enemy,
-                            maxHp: serverMessage.payload.enemy.stats?.hp ?? serverMessage.payload.enemy.currentHp
-                        });
-                        setInProgress(true);
-
-
-                        if (Array.isArray(serverMessage.payload.chatMessage)) {
-                            setBattleLog(serverMessage.payload.chatMessage.filter(msg => typeof msg === 'string'));
-                        } else if (typeof serverMessage.payload.chatMessage === 'string') {
-                            setBattleLog(serverMessage.payload.chatMessage);
-                        }
                 }
             };
+
+            // Inicia a batalha
+            socket.current.send(JSON.stringify({ type: 'startRandomBattle' }));
         }
-    }, []);
+        
+        // Função de limpeza para remover o handler quando o componente desmontar
+        return () => {
+            if (socket && socket.current) {
+                socket.current.onmessage = null;
+            }
+        }
+    }, [socket]);
 
 
     const handleAttack = (attack: string) => {
@@ -141,7 +114,6 @@ function BattlePage() {
 
     const handleAction = (action: string) => {
         setSelectedAction(action)
-        setBattleLog(prev => [...prev, `Você selecionou: ${action}`])
     }
 
     const handleChatSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -151,16 +123,15 @@ function BattlePage() {
 
         if (message && socket && socket.current) {
             socket.current.send(JSON.stringify({
-                type: 'chat',
+                type: 'batteChat', // Usa o tipo de chat de batalha
                 payload: message
             }));
         }
-
         input.value = '';
     };
 
-
     const getHpPercentage = (hp: number, maxHp: number) => {
+        if (!maxHp) return 0;
         return (hp / maxHp) * 100
     }
 

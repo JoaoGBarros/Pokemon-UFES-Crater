@@ -1,59 +1,45 @@
-import React, { useState, useContext, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import React, { useState, useContext } from "react";
+import { Button } from "@/components/ui/button";
 import {
     Card,
-    CardAction,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { WebSocketContext } from "@/WebSocketContext"
-
-import emeraldBg from "@/assets/loginBackground.png"
-import { useNavigate } from "react-router-dom"
-
-
-
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { WebSocketContext } from "@/WebSocketContext";
+import emeraldBg from "@/assets/loginBackground.png";
+import { useNavigate } from "react-router-dom";
 
 function LoginPage() {
-    const navigate = useNavigate()
-    const [nickname, setNickname] = useState("")
-    const socket = useContext(WebSocketContext)
-
-
-
+    const navigate = useNavigate();
+    const [nickname, setNickname] = useState("");
+    const socket = useContext(WebSocketContext);
 
     if (socket && socket.current) {
         socket.current.onmessage = (event) => {
             const serverMessage = JSON.parse(event.data);
-            switch (serverMessage.type) {
-                case "loginSuccess":
-                    navigate("/home");
-                    break;
-                case "loginError":
-                    alert(serverMessage.payload.message);
-                    break;
+            if (serverMessage.type === "loginSuccess") {
+                navigate("/game"); // Navega para a nova GamePage
+            } else if (serverMessage.type === "loginError") {
+                alert(serverMessage.payload);
             }
         };
     }
     
     const handleLogin = (event: React.FormEvent) => {
-        event.preventDefault()
+        event.preventDefault();
 
         if (socket && socket.current && socket.current.readyState === WebSocket.OPEN) {
             socket.current.send(JSON.stringify({
                 type: "login",
                 payload: { nickname }
-            }))
+            }));
         } else {
             alert("Conexão com o servidor não está pronta. Tente novamente em instantes.");
         }
-    }
-
+    };
 
     return (
         <div
@@ -91,7 +77,7 @@ function LoginPage() {
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }
 
-export default LoginPage
+export default LoginPage;

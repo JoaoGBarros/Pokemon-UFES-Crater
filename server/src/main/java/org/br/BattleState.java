@@ -106,8 +106,6 @@ public class BattleState {
     }
 
     public BattleState() {
-        p1 = AvailablePokemon.FROSLASS.copy();
-        p2 = AvailablePokemon.CHARIZARD.copy();
     }
 
     public List<String> getLog() {

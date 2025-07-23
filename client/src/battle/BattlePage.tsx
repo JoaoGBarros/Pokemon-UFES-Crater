@@ -78,7 +78,6 @@ function BattlePage() {
                     case "runSuccess":
                         setInProgress(false);
                         alert("Você fugiu da batalha!");
-                        navigate('/game');
                         break;
                 }
             };

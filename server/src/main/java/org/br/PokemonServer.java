@@ -49,17 +49,8 @@ public class PokemonServer extends WebSocketServer {
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         System.out.println("Jogador desconectado: " + conn.getRemoteSocketAddress());
-        if(playerStates.containsKey(conn)) {
-            GameState gameState = playerStates.get(conn);
-            if (gameState.getPvpBattleId() != null) {
-                PvpBattleState pvpBattle = activePvpBattles.get(gameState.getPvpBattleId());
-                if (pvpBattle != null) {
-                    pvpBattle.forceEndBattle();
-                }
-            }
-            globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
-            playerStates.remove(conn);
-        }
+        globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
+        playerStates.remove(conn);
         broadcastGlobalChat();
         broadcastCurrentPlayers();
     }
@@ -149,7 +140,7 @@ public class PokemonServer extends WebSocketServer {
                 break;
             case "battleChat":
                 String chatMessage = receivedJson.getString("payload");
-                broadcast(gameState.sendMessage(chatMessage).toString());
+                conn.send(gameState.sendMessage(chatMessage).toString());
                 break;
             case "retrieveGlobalChat":
                 broadcastGlobalChat();
@@ -209,7 +200,8 @@ public class PokemonServer extends WebSocketServer {
                     gameState.getBattleState().setBattleStatus(BattleStatus.BATTLE_ENDED);
                     JSONObject battleEndJson = new JSONObject();
                     battleEndJson.put("type", "runSuccess");
-                    broadcast(battleEndJson.toString());
+                    conn.send(battleEndJson.toString());
+                    conn.send(gameState.toJson().toString());
                 } else {
                     System.out.println("Nenhuma batalha em andamento para encerrar.");
                 }
@@ -268,20 +260,21 @@ public class PokemonServer extends WebSocketServer {
             // Opcional: Adicionar lógica para salvar essa posição corrigida no banco de dados.
         }
         player.setPokemon(Pokemon.getByName(chosenPokemon).copy());
-        playerStates.put(conn, new GameState(player));
+        GameState state = new GameState(player);
+        playerStates.put(conn, state);
         
         JSONObject loginSuccessMsg = new JSONObject();
         loginSuccessMsg.put("type", "loginSuccess");
         loginSuccessMsg.put("payload", player.toJSON());
         conn.send(loginSuccessMsg.toString());
-        
         globalChatMessages.add(nickname + " entrou no jogo.");
         
         JSONObject newPlayerMsg = new JSONObject();
         newPlayerMsg.put("type", "playerJoined");
         newPlayerMsg.put("payload", player.toJSON());
         broadcast(newPlayerMsg.toString());
-        
+
+
         broadcastChat();
     }
 

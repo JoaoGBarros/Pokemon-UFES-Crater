@@ -148,7 +148,7 @@ public class PvpBattleState extends BattleState {
     private void endBattle(Player winner) {
         setBattleStatus(BattleStatus.BATTLE_ENDED);
         if (winner != null) {
-            getLog().add(winner.getNickname() + " venceu a batalha!");
+            getLog().add(winner.getNickname() + " venceu a batalhaaaaaa!");
         }
         scheduler.shutdown();
         broadcastBattleState();

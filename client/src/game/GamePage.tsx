@@ -123,6 +123,9 @@ function GamePage() {
                     case 'wildPokemonFound':
                         navigate('/battle');
                         break;
+                    case 'playerJoined':
+                        setPlayers(prev => [...prev.filter(p => p.id !== serverMessage.payload.id), serverMessage.payload]);
+                        break;
                     case 'playerMoved':
                         setPlayers(prev => prev.map(p => p.id === serverMessage.payload.id ? serverMessage.payload : p));
                         break;
@@ -207,7 +210,6 @@ function GamePage() {
                 socket.current.send(JSON.stringify({ type: "move", payload: { direction } }));
             }
         };
-
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [socket]);

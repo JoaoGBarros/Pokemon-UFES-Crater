@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PokemonServer extends WebSocketServer {
 
     private final Map<WebSocket, GameState> playerStates = new ConcurrentHashMap<>();
+    private List<String> globalChatMessages = new ArrayList<>();
     private Connection dbConnection;
 
     public PokemonServer(int port) {
@@ -44,6 +46,7 @@ public class PokemonServer extends WebSocketServer {
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         System.out.println("Jogador desconectado: " + conn.getRemoteSocketAddress());
+        globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
         playerStates.remove(conn);
     }
 
@@ -55,6 +58,20 @@ public class PokemonServer extends WebSocketServer {
         GameState gameState = playerStates.get(conn);
 
         switch (messageType) {
+            case "retrieveCurrentPlayers":
+                JSONObject playersJson = new JSONObject();
+                playersJson.put("type", "currentPlayers");
+                playersJson.put("payload", playerStates.values().stream().map(
+                        state -> state.getPlayer().getNickname()
+                ).toList());
+                conn.send(playersJson.toString());
+                break;
+            case "retrieveGlobalChat":
+                JSONObject globalChatJson = new JSONObject();
+                globalChatJson.put("type", "globalChat");
+                globalChatJson.put("payload", globalChatMessages);
+                broadcast(globalChatJson.toString());
+                break;
             case "login":
                 String nickname = receivedJson.getJSONObject("payload").getString("nickname");
                 JSONObject loginResponse = new JSONObject();
@@ -69,6 +86,7 @@ public class PokemonServer extends WebSocketServer {
                 assert player != null;
                 loginResponse.put("payload", player.toJSON());
                 playerStates.put(conn, new GameState(player));
+                globalChatMessages.add(nickname + " entrou no jogo.");
                 conn.send(loginResponse.toString());
                 break;
 
@@ -96,9 +114,18 @@ public class PokemonServer extends WebSocketServer {
                 }).start();
                 break;
 
-            case "chat":
+            case "batteChat":
                 String chatMessage = receivedJson.getString("payload");
                 broadcast(gameState.sendMessage(chatMessage).toString());
+                break;
+
+            case "chat":
+                String mensagem = receivedJson.getString("payload");
+                globalChatMessages.add(gameState.getPlayer().getNickname() + ": " + mensagem);
+                JSONObject globalChat = new JSONObject();
+                globalChat.put("type", "globalChat");
+                globalChat.put("payload", globalChatMessages);
+                broadcast(globalChat.toString());
                 break;
 
             default:
@@ -122,4 +149,5 @@ public class PokemonServer extends WebSocketServer {
         PokemonServer server = new PokemonServer(port);
         server.start();
     }
+
 }

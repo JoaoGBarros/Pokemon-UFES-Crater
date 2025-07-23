@@ -40,25 +40,7 @@ function LoginPage() {
             }
         };
     }
-
-    useEffect(() => {
-        if (!socket || !socket.current) return
-
-        const handleMessage = (event: MessageEvent) => {
-            const serverMessage = JSON.parse(event.data)
-            if (serverMessage.type === "loginSuccess") {
-                navigate("/home")
-            } else if (serverMessage.type === "loginError") {
-                alert(serverMessage.payload.message)
-            }
-        }
-
-        socket.current.addEventListener("message", handleMessage)
-        return () => {
-            socket.current?.removeEventListener("message", handleMessage)
-        }
-    }, [socket, navigate])
-
+    
     const handleLogin = (event: React.FormEvent) => {
         event.preventDefault()
 

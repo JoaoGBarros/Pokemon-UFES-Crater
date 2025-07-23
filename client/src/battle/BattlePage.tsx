@@ -76,7 +76,7 @@ function BattlePage() {
                 type: "battleCommand",
                 payload: ["attack", attack],
             }));
-            setSelectedAction(null); // Volta para o menu principal após atacar
+            setSelectedAction(null); 
         }
     };
 

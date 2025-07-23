@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState, useRef } from 'react';
 import { WebSocketContext } from '@/WebSocketContext';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import mapBackground from '@/assets/Mapa0.png'; // Importe a imagem do mapa
+import mapBackground from '@/assets/Mapa0.png';
 
 // Interface para o objeto Player
 interface Player {
@@ -16,6 +16,7 @@ interface Player {
 const TILE_SIZE = 32;
 const MAP_WIDTH_TILES = 20;
 const MAP_HEIGHT_TILES = 40;
+
 // Componente para renderizar um único jogador
 const PlayerSprite: React.FC<{ player: Player }> = ({ player }) => (
     <div
@@ -49,9 +50,8 @@ const Map: React.FC<{ players: Player[] }> = ({ players }) => (
         width: `${MAP_WIDTH_TILES * TILE_SIZE}px`,
         height: `${MAP_HEIGHT_TILES * TILE_SIZE}px`,
         border: '2px solid black',
-        // Use a imagem importada como fundo
         backgroundImage: `url(${mapBackground})`,
-        backgroundSize: 'cover', // Garante que a imagem cubra toda a área
+        backgroundSize: 'cover',
         overflow: 'hidden'
     }}>
         {players.map(player => <PlayerSprite key={player.id} player={player} />)}
@@ -108,7 +108,6 @@ function GamePage() {
 
     useEffect(() => {
         if (socket && socket.current) {
-            // Define o message handler específico para a página de jogo
             socket.current.onmessage = (event) => {
                 const serverMessage = JSON.parse(event.data);
                 
@@ -128,22 +127,23 @@ function GamePage() {
                     case 'globalChat':
                         setMessages(serverMessage.payload);
                         break;
+                    case 'wildBattleStart':
+                        console.log("Encontro selvagem! Navegando para a batalha...");
+                        navigate('/battle');
+                        break;
                 }
             };
             
-            // Solicita o estado inicial ao servidor
             socket.current.send(JSON.stringify({ type: "requestInitialState" }));
         }
 
-        // Função de limpeza para remover o handler quando o componente desmontar
         return () => {
             if(socket && socket.current) {
                 socket.current.onmessage = null;
             }
         }
-    }, [socket]);
+    }, [socket, navigate]);
 
-    // Gerenciador de movimento do teclado
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const directions: { [key: string]: string } = {
@@ -159,7 +159,6 @@ function GamePage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [socket]);
 
-    // Função para enviar mensagem de chat
     const sendMessage = (message: string) => {
         if (socket?.current?.readyState === WebSocket.OPEN) {
             socket.current.send(JSON.stringify({ type: "chat", payload: message }));
@@ -170,7 +169,7 @@ function GamePage() {
         <div className="flex min-h-svh flex-row items-center justify-center gap-8 p-4 bg-gray-200">
             <div className="flex flex-col gap-4">
                <Map players={players} />
-               <Button onClick={() => navigate('/battle')}>Ir para Batalha Aleatória</Button>
+               <Button onClick={() => navigate('/battle')}>Batalha Manual (Debug)</Button>
             </div>
             <Chat messages={messages} onSendMessage={sendMessage} />
         </div>

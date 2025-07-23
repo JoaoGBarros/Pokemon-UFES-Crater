@@ -82,6 +82,10 @@ public class PokemonServer extends WebSocketServer {
                     case "cancelMove":
                         pvpBattle.cancelMove(gameState.getPlayer().getNickname());
                         break;
+                    case "battleChat":
+                        String chatMessage = receivedJson.getString("payload");
+                        pvpBattle.sendMessage(gameState.getPlayer().getNickname(), chatMessage);
+                        break;
                 }
             }
         }

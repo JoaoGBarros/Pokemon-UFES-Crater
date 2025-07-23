@@ -118,7 +118,7 @@ function BattlePage() {
 
         if (message && socket && socket.current) {
             socket.current.send(JSON.stringify({
-                type: 'batteChat', // Usa o tipo de chat de batalha
+                type: 'battleChat',
                 payload: message
             }));
         }

@@ -76,7 +76,7 @@ public class PvpBattleState extends BattleState {
                 getLog().add(player2State.getPlayer().getNickname() + " não escolheu a tempo! " + player1State.getPlayer().getNickname() + " venceu!");
                 endBattle(player1State.getPlayer());
             }
-        }, 120, TimeUnit.SECONDS);
+        }, 300, TimeUnit.SECONDS);
     }
 
     public synchronized void submitMove(String nickname, String move) {
@@ -203,6 +203,19 @@ public class PvpBattleState extends BattleState {
         return state;
     }
 
+    private void broadcastBattleChat(){
+        JSONObject state = new JSONObject();
+        state.put("type", "chatMessage");
+        state.put("payload", getLog());
+        player1Conn.send(state.toString());
+        player2Conn.send(state.toString());
+    }
+
     public String getPlayer1Nickname() { return player1State.getPlayer().getNickname(); }
     public String getPlayer2Nickname() { return player2State.getPlayer().getNickname(); }
+
+    public void sendMessage(String nickame, String chatMessage) {
+        getLog().add(nickame + " : " + chatMessage);
+        broadcastBattleChat();
+    }
 }

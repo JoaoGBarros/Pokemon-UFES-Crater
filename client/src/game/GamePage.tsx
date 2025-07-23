@@ -114,53 +114,44 @@ function GamePage() {
     const [inviteModalOpen, setInviteModalOpen] = useState(false)
     const [currentInvite, setCurrentInvite] = useState<{ from: string, message: string } | null>(null)
     const chatEndRef = useRef<HTMLDivElement>(null)
-
-    if (socket && socket.current) {
-        socket.current.onmessage = (event) => {
-            const serverMessage = JSON.parse(event.data);
-            switch (serverMessage.type) {
-                case "currentPlayers":
-                    setOnlineUsers(serverMessage.payload);
-                    break;
-
-                case "globalChat":
-                    if (Array.isArray(serverMessage.payload)) {
-                        setMessages(serverMessage.payload.filter(msg => typeof msg === 'string'));
-                    } else if (typeof serverMessage.payload === 'string') {
-                        setMessages([serverMessage.payload]);
-                    }
-                    break;
-
-                case "battleRequest":
-                    setInvites(prev => [...prev, {
-                        from: serverMessage.payload,
-                        message: `Você foi desafiado para uma batalha por ${serverMessage.payload}`
-                    }])
-                    break;
-
-                case "battleState":
-                    if (serverMessage.payload.battleStatus === "BATTLE_STARTED" || serverMessage.payload.battleStatus === "BATTLE_IN_PROGRESS") {
-                        navigate('/battle');
-                    }
-
-                case "startPvpBattle":
-                    const battleId = serverMessage.payload.battleId;
-                    navigate('/battle', { state: { pvpBattleId: battleId } });
-                    break;
-            }
-        };
-    }
-
+    
     useEffect(() => {
         if (socket && socket.current) {
-            socket.current.send(JSON.stringify({
-                type: "retrieveCurrentPlayers"
-            }))
-            socket.current.send(JSON.stringify({
-                type: "retrieveGlobalChat"
-            }))
+            socket.current.onmessage = (event) => {
+                const serverMessage = JSON.parse(event.data);
+                switch (serverMessage.type) {
+                    case "currentPlayers":
+                        setOnlineUsers(serverMessage.payload);
+                        break;
+
+                    case "globalChat":
+                        if (Array.isArray(serverMessage.payload)) {
+                            setMessages(serverMessage.payload.filter(msg => typeof msg === 'string'));
+                        } else if (typeof serverMessage.payload === 'string') {
+                            setMessages([serverMessage.payload]);
+                        }
+                        break;
+
+                    case "battleRequest":
+                        setInvites(prev => [...prev, {
+                            from: serverMessage.payload,
+                            message: `Você foi desafiado para uma batalha por ${serverMessage.payload}`
+                        }])
+                        break;
+
+                    case "battleState":
+                        if (serverMessage.payload.battleStatus === "BATTLE_STARTED" || serverMessage.payload.battleStatus === "BATTLE_IN_PROGRESS") {
+                            navigate('/battle');
+                        }
+
+                    case "startPvpBattle":
+                        const battleId = serverMessage.payload.battleId;
+                        navigate('/battle', { state: { pvpBattleId: battleId } });
+                        break;
+                }
+            };
         }
-    }, [messages])
+    }, [messages, socket]);
 
     useEffect(() => {
         if (socket && socket.current) {
@@ -263,6 +254,25 @@ function GamePage() {
         setInviteModalOpen(false)
         setCurrentInvite(null)
     }
+
+    useEffect(() => {
+        if (socket && socket.current) {
+            // Interval para atualizar jogadores e chat a cada 500ms
+            const interval = setInterval(() => {
+                if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+                    socket.current.send(JSON.stringify({ type: "retrieveCurrentPlayers" }));
+                    socket.current.send(JSON.stringify({ type: "retrieveGlobalChat" }));
+                }
+            }, 500);
+
+            return () => {
+                clearInterval(interval);
+                if (socket && socket.current) {
+                    socket.current.onmessage = null;
+                }
+            }
+        }
+    }, [socket]);
 
     return (
         <div className="flex min-h-svh flex-col items-center justify-center relative">

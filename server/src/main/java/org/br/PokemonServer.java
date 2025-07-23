@@ -133,18 +133,9 @@ public class PokemonServer extends WebSocketServer {
                 String chatMessage = receivedJson.getString("payload");
                 broadcast(gameState.sendMessage(chatMessage).toString());
                 break;
-
-            case "chat":
-                String mensagem = receivedJson.getString("payload");
-                globalChatMessages.add(gameState.getPlayer().getNickname() + ": " + mensagem);
-                broadcastGlobalChat();
-                break;
-
             case "retrieveGlobalChat":
                 broadcastGlobalChat();
                 break;
-
-
             case "requestBattle":
                 String targetNickname = receivedJson.getString("payload");
                 WebSocket targetConn = getConnByNickname(targetNickname);

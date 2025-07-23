@@ -292,7 +292,7 @@ function GamePage() {
                         <Button type="submit">Enviar</Button>
                     </form>
                 </div>
-                <div className="relative flex flex-row items-center gap-2">
+                <div className="relative flex flex-column items-center gap-2">
                     <Button onClick={() => setDropdownOpen(v => !v)}>
                         Usuários Online
                     </Button>

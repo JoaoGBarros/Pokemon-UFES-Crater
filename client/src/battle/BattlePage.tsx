@@ -45,7 +45,7 @@ function BattlePage() {
 
             socket.current.onmessage = (event) => {
                 const serverMessage = JSON.parse(event.data);
-                console.log("BattlePage received message: ", serverMessage); // Log para depuração
+                console.log("BattlePage received message: ", serverMessage);
 
                 switch (serverMessage.type) {
                     case "battleStart":
@@ -68,7 +68,6 @@ function BattlePage() {
                         if (Array.isArray(serverMessage.payload.chatMessage)) {
                             setBattleLog(serverMessage.payload.chatMessage);
                         }
-                        setInProgress(true);
                         setSelectedAction(null);
                         break;
                     case "chatMessage":
@@ -224,7 +223,7 @@ function BattlePage() {
                                     </form>
                                     {!inProgress ?
                                         <Button
-                                            onClick={() => navigate("/home")}
+                                            onClick={() => navigate("/game")}
                                             variant="outline"
                                             className="w-full"
                                         >
@@ -257,8 +256,8 @@ function BattlePage() {
                                             ⚡ POKÉMON
                                         </Button>
                                         <Button
-                                            disabled={pvpBattleId ? false : true}
-                                            onClick={() => navigate('/home')}
+                                            disabled={pvpBattleId ? true : false}
+                                            onClick={() => navigate('/game')}
                                             className="h-16 text-lg font-semibold bg-gray-500 hover:bg-gray-600"
                                         >
                                             🏃 FUGIR

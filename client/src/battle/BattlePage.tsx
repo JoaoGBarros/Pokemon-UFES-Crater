@@ -79,11 +79,9 @@ function BattlePage() {
                 }
             };
 
-            // Inicia a batalha
             socket.current.send(JSON.stringify({ type: 'startRandomBattle' }));
         }
-        
-        // Função de limpeza para remover o handler quando o componente desmontar
+    
         return () => {
             if (socket && socket.current) {
                 socket.current.onmessage = null;

@@ -133,7 +133,7 @@ public class PokemonServer extends WebSocketServer {
                 gameState.processCommand(command);
                 conn.send(gameState.toJson().toString());
                 break;
-            case "batteChat":
+            case "battleChat":
                 String chatMessage = receivedJson.getString("payload");
                 broadcast(gameState.sendMessage(chatMessage).toString());
                 break;
@@ -188,6 +188,17 @@ public class PokemonServer extends WebSocketServer {
                     globalChatMessages.add(gameState.getPlayer().getNickname() + " recusou o convite para a batalha.");
                 }
                 broadcastGlobalChat();
+                break;
+            case "run":
+                if (gameState.getBattleState() != null &&
+                        (gameState.getBattleState().getBattleStatus() == BattleStatus.BATTLE_IN_PROGRESS || gameState.getBattleState().getBattleStatus() == BattleStatus.BATTLE_STARTED)) {
+                    gameState.getBattleState().setBattleStatus(BattleStatus.BATTLE_ENDED);
+                    JSONObject battleEndJson = new JSONObject();
+                    battleEndJson.put("type", "runSuccess");
+                    broadcast(battleEndJson.toString());
+                } else {
+                    System.out.println("Nenhuma batalha em andamento para encerrar.");
+                }
                 break;
 
 

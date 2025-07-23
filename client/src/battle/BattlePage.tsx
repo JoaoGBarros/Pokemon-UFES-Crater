@@ -75,6 +75,11 @@ function BattlePage() {
                             setBattleLog(serverMessage.payload);
                         }
                         break;
+                    case "runSuccess":
+                        setInProgress(false);
+                        alert("Você fugiu da batalha!");
+                        navigate('/game');
+                        break;
                 }
             };
         }
@@ -124,6 +129,15 @@ function BattlePage() {
         }
         input.value = '';
     };
+
+    const handleRun = () => {
+        if (socket && socket.current) {
+            socket.current.send(JSON.stringify({
+                type: 'run',
+            }));
+        }
+
+    }
 
     const getHpPercentage = (hp: number, maxHp: number) => {
         if (!maxHp) return 0;
@@ -255,7 +269,7 @@ function BattlePage() {
                                         </Button>
                                         <Button
                                             disabled={pvpBattleId ? true : false}
-                                            onClick={() => navigate('/game')}
+                                            onClick={handleRun}
                                             className="h-16 text-lg font-semibold bg-gray-500 hover:bg-gray-600"
                                         >
                                             🏃 FUGIR

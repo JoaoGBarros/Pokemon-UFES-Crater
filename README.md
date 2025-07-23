@@ -8,6 +8,8 @@ Este projeto é uma implementação do desafio "Servidor de Jogo Multiplayer Bá
 
 O sistema consiste em um servidor autoritativo feito em Java que gerencia o estado do jogo, e um cliente web interativo feito em React. Os jogadores podem se conectar, se ver em um mundo compartilhado, se locomover em tempo real e batalhar uns contra os outros. A comunicação em tempo real é realizada utilizando WebSockets.
 
+O jogo foi inspirado no Pokemon Crater, um antigo jogo web de Pokemon criado por fãs que permitia multiplos jogadores explorarem o mesmo mapa e batalhar contra si. Pokemons selvagens eram encontros unicos aos jogadores, enquanto batalha pvp precisava de sincronizar ambos participantes.
+
 ## Tecnologias Utilizadas
 
 * **Backend:** Java (21)
@@ -60,22 +62,25 @@ Após os contêineres estarem em execução, os serviços estarão disponíveis 
 
 - [x] Conexão persistente entre Cliente (React) e Servidor (Java) via WebSockets.
 
-- [] Gerenciamento de múltiplos jogadores em um lobby/mapa compartilhado.
+- [x] Gerenciamento de múltiplos jogadores em um lobby/mapa compartilhado.
 
-- [] Sincronização de movimento dos jogadores em tempo real.
+- [x] Sincronização de movimento dos jogadores em tempo real.
 
 - [x] Sistema de batalha 1v1 em turnos.
 
 - [x] Sistema de chat no jogo.
 
-- [ ] Transição entre diferentes mapas do jogo.
+- [x] Batalha contra Pokemons Selvagens.
 
-- [ ] Persistência de dados do jogador (posição e time de Pokémon) em um banco de dados SQLite.
 
 ## Possiveis Melhorias Futuras
 
-- Adição de NPCs (Non-Player Characters) e Pokémon selvagens nos mapas.
+- Adição de NPCs (Non-Player Characters).
 
 - Expansão do mundo com mais mapas.
 
 - Implementação de um sistema de inventário e itens.
+
+- Persistência de dados do jogador (posição e time de Pokémon) em um banco de dados SQLite.
+
+- Melhorias visuais do site e do mapa.

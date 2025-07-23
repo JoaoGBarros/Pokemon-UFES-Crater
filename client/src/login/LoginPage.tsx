@@ -31,6 +31,7 @@ function LoginPage() {
                 setPokemons(serverMessage.payload || []);
             }
             if (serverMessage.type === "loginSuccess") {
+                localStorage.setItem("nickname", nickname);
                 navigate("/game");
             } else if (serverMessage.type === "loginError") {
                 alert(serverMessage.payload);

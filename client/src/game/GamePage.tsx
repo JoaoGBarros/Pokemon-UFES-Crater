@@ -114,7 +114,7 @@ function GamePage() {
     const [inviteModalOpen, setInviteModalOpen] = useState(false)
     const [currentInvite, setCurrentInvite] = useState<{ from: string, message: string } | null>(null)
     const chatEndRef = useRef<HTMLDivElement>(null)
-    
+
     useEffect(() => {
         if (socket && socket.current) {
             socket.current.onmessage = (event) => {
@@ -301,8 +301,7 @@ function GamePage() {
                         />
                         <Button type="submit">Enviar</Button>
                     </form>
-                </div>
-                <div className="relative flex flex-column items-center gap-2">
+                    <div className="relative flex flex-column items-center gap-10 mt-10">
                     <Button onClick={() => setDropdownOpen(v => !v)}>
                         Usuários Online
                     </Button>
@@ -328,8 +327,9 @@ function GamePage() {
                             )}
                             {onlineUsers.map(user => (
                                 <button
+                                    disabled={user === localStorage.getItem("nickname")}
                                     key={user}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 ${user === localStorage.getItem("nickname")? "bg-gray-200" : ""}`}
                                     onClick={() => handleUserClick(user)}
                                     type="button"
                                 >
@@ -338,6 +338,7 @@ function GamePage() {
                             ))}
                         </div>
                     )}
+                </div>
                 </div>
             </div>
             {sidePanelOpen && selectedUser && (

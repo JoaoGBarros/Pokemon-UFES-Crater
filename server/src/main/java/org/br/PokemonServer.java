@@ -242,6 +242,16 @@ public class PokemonServer extends WebSocketServer {
     private void handleLogin(WebSocket conn, JSONObject receivedJson) {
         String nickname = receivedJson.getJSONObject("payload").getString("nickname");
         String chosenPokemon = receivedJson.getJSONObject("payload").optString("selectedPokemon");
+
+        boolean nicknameEmUso = playerStates.values().stream()
+                .anyMatch(gs -> gs.getPlayer().getNickname().equalsIgnoreCase(nickname));
+        if (nicknameEmUso) {
+            conn.send(new JSONObject()
+                    .put("type", "loginError")
+                    .put("payload", "Este nickname já está em uso.").toString());
+            return;
+        }
+
         if (nickname == null || nickname.isEmpty()) {
             conn.send(new JSONObject().put("type", "loginError").put("payload", "Nickname não pode ser vazio.").toString());
             return;

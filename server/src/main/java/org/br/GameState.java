@@ -14,7 +14,7 @@ public class GameState {
     public JSONObject startRandomBattle(WebSocket conn) {
         System.out.println("Iniciando batalha aleatória...");
         this.battleState = new BattleState();
-        this.battleState.startRandomBattle();
+        this.battleState.startRandomBattle(player.getPokemon());
 
         JSONObject json = new JSONObject();
         json.put("type", "battleStart");

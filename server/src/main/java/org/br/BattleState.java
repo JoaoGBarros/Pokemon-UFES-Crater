@@ -12,9 +12,10 @@ public class BattleState {
     private int turn = 0;
     private List<String> log = new java.util.ArrayList<>();
 
-    public void startRandomBattle() {
+    public void startRandomBattle(Pokemon player) {
+        p1 = player.copy();
+        p2 = Pokemon.getRandomPokemon();
         System.out.println("A batalha começou entre " + p1.name + " e " + p2.name + "!");
-
         this.log.add("Um Pokémon selvagem apareceu!");
         this.log.add("Vá, " + p1.name + "!");
         this.battleStatus = BattleStatus.BATTLE_STARTED;
@@ -105,8 +106,8 @@ public class BattleState {
     }
 
     public BattleState() {
-        p1 = AvailablePokemon.PIKACHU.copy();
-        p2 = AvailablePokemon.CHARMANDER.copy();
+        p1 = AvailablePokemon.FROSLASS.copy();
+        p2 = AvailablePokemon.CHARIZARD.copy();
     }
 
     public List<String> getLog() {

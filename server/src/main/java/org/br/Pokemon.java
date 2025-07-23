@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.br.AvailablePokemon.*;
+
 public class Pokemon {
     String name;
     int level;
@@ -46,4 +48,22 @@ public class Pokemon {
                 List.copyOf(this.types)
         );
     }
+
+    public static Pokemon getByName(String name) {
+        return List.of(
+                        LUCARIO, SCEPTILE, SALAMENCE, GARDEVOIR, CHARIZARD, FROSLASS, MAGNEZONE
+                ).stream()
+                .filter(p -> p.name.equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static Pokemon getRandomPokemon() {
+        List<Pokemon> pokemons = List.of(
+                LUCARIO, SCEPTILE, SALAMENCE, GARDEVOIR, CHARIZARD, FROSLASS, MAGNEZONE
+        );
+        int idx = (int) (Math.random() * pokemons.size());
+        return pokemons.get(idx).copy();
+    }
+
 }

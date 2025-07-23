@@ -49,8 +49,17 @@ public class PokemonServer extends WebSocketServer {
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         System.out.println("Jogador desconectado: " + conn.getRemoteSocketAddress());
-        globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
-        playerStates.remove(conn);
+        if(playerStates.containsKey(conn)) {
+            GameState gameState = playerStates.get(conn);
+            if (gameState.getPvpBattleId() != null) {
+                PvpBattleState pvpBattle = activePvpBattles.get(gameState.getPvpBattleId());
+                if (pvpBattle != null) {
+                    pvpBattle.forceEndBattle();
+                }
+            }
+            globalChatMessages.add(playerStates.get(conn).getPlayer().getNickname() + " saiu do jogo.");
+            playerStates.remove(conn);
+        }
         broadcastGlobalChat();
         broadcastCurrentPlayers();
     }
@@ -62,6 +71,11 @@ public class PokemonServer extends WebSocketServer {
         
         if (messageType.equals("login")) {
             handleLogin(conn, receivedJson);
+            return;
+        }
+
+        if(messageType.equals("retrieveAvailablePokemons")){
+            sendAvailablePokemons(conn);
             return;
         }
 
@@ -227,6 +241,7 @@ public class PokemonServer extends WebSocketServer {
 
     private void handleLogin(WebSocket conn, JSONObject receivedJson) {
         String nickname = receivedJson.getJSONObject("payload").getString("nickname");
+        String chosenPokemon = receivedJson.getJSONObject("payload").optString("selectedPokemon");
         if (nickname == null || nickname.isEmpty()) {
             conn.send(new JSONObject().put("type", "loginError").put("payload", "Nickname não pode ser vazio.").toString());
             return;
@@ -242,7 +257,7 @@ public class PokemonServer extends WebSocketServer {
             player.setPosY(1);
             // Opcional: Adicionar lógica para salvar essa posição corrigida no banco de dados.
         }
-
+        player.setPokemon(Pokemon.getByName(chosenPokemon).copy());
         playerStates.put(conn, new GameState(player));
         
         JSONObject loginSuccessMsg = new JSONObject();
@@ -297,6 +312,16 @@ public class PokemonServer extends WebSocketServer {
         chatUpdateMsg.put("type", "globalChat");
         chatUpdateMsg.put("payload", globalChatMessages);
         broadcast(chatUpdateMsg.toString());
+    }
+
+    private void sendAvailablePokemons(WebSocket conn) {
+        JSONObject availablePokemonsJson = new JSONObject();
+        availablePokemonsJson.put("type", "availablePokemon");
+        availablePokemonsJson.put("payload", AvailablePokemon.getAll()
+                .stream()
+                .map(Pokemon::toJson)
+                .collect(Collectors.toList()));
+        conn.send(availablePokemonsJson.toString());
     }
 
     @Override

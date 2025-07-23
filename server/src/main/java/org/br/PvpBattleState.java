@@ -30,11 +30,11 @@ public class PvpBattleState extends BattleState {
         super();
         this.player1State = player1State;
         this.player1Conn = player1Conn;
-        this.setP1(AvailablePokemon.PIKACHU.copy());
+        this.setP1(player1State.getPlayer().getPokemon().copy());
 
         this.player2State = player2State;
         this.player2Conn = player2Conn;
-        this.setP2(AvailablePokemon.CHARMANDER.copy());
+        this.setP2(player2State.getPlayer().getPokemon().copy());
 
         this.onBattleEnd = onBattleEnd;
         this.setBattleStatus(BattleStatus.WAITING_FOR_PLAYER);
@@ -158,11 +158,15 @@ public class PvpBattleState extends BattleState {
     public void broadcastBattleState() {
         JSONObject jsonReturn = new JSONObject();
         jsonReturn.put("type", "battleState");
-        jsonReturn.put("payload", toJson(player1State.getPlayer().getNickname()));
-        player1Conn.send(jsonReturn.toString());
+        if(player1State != null) {
+            jsonReturn.put("payload", toJson(player1State.getPlayer().getNickname()));
+            player1Conn.send(jsonReturn.toString());
+        }
 
-        jsonReturn.put("payload", toJson(player2State.getPlayer().getNickname()));
-        player2Conn.send(jsonReturn.toString());
+        if(player2State != null) {
+            jsonReturn.put("payload", toJson(player2State.getPlayer().getNickname()));
+            player2Conn.send(jsonReturn.toString());
+        }
     }
 
     public synchronized void cancelMove(String nickname) {
@@ -217,5 +221,14 @@ public class PvpBattleState extends BattleState {
     public void sendMessage(String nickame, String chatMessage) {
         getLog().add(nickame + " : " + chatMessage);
         broadcastBattleChat();
+    }
+
+    public void forceEndBattle() {
+        this.player1State.getBattleState().setBattleStatus(BattleStatus.BATTLE_ENDED);
+        this.player2State.getBattleState().setBattleStatus(BattleStatus.BATTLE_ENDED);
+        if (player1Conn != null) player1Conn.send("A batalha foi encerrada.");
+        if (player2Conn != null) player2Conn.send("A batalha foi encerrada.");
+        if (onBattleEnd != null) onBattleEnd.accept(this);
+        broadcastBattleState();
     }
 }

@@ -120,6 +120,9 @@ function GamePage() {
             socket.current.onmessage = (event) => {
                 const serverMessage = JSON.parse(event.data);
                 switch (serverMessage.type) {
+                    case 'wildPokemonFound':
+                        navigate('/battle');
+                        break;
                     case 'playerMoved':
                         setPlayers(prev => prev.map(p => p.id === serverMessage.payload.id ? serverMessage.payload : p));
                         break;

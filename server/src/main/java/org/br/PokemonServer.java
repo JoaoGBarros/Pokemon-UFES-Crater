@@ -299,6 +299,7 @@ public class PokemonServer extends WebSocketServer {
             case "right": newX++; break;
         }
 
+
         if (MapManager.isPositionValid(newX, newY)) {
             playerToMove.setPosX(newX);
             playerToMove.setPosY(newY);
@@ -307,6 +308,15 @@ public class PokemonServer extends WebSocketServer {
             moveResponse.put("type", "playerMoved");
             moveResponse.put("payload", playerToMove.toJSON());
             broadcast(moveResponse.toString());
+
+            if (Math.random() < 0.2) {
+                JSONObject foundPokemon = new JSONObject();
+                foundPokemon.put("type", "wildPokemonFound");
+                WebSocket conn = getConnByNickname(playerToMove.getNickname());
+                if (conn != null) {
+                    conn.send(foundPokemon.toString());
+                }
+            }
         }
     }
 

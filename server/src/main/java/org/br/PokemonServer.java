@@ -309,7 +309,7 @@ public class PokemonServer extends WebSocketServer {
             moveResponse.put("payload", playerToMove.toJSON());
             broadcast(moveResponse.toString());
 
-            if (Math.random() < 0.2) {
+            if (Math.random() < 0.15) {
                 JSONObject foundPokemon = new JSONObject();
                 foundPokemon.put("type", "wildPokemonFound");
                 WebSocket conn = getConnByNickname(playerToMove.getNickname());

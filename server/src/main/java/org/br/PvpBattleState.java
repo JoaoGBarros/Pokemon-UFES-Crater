@@ -95,7 +95,7 @@ public class PvpBattleState extends BattleState {
         }
 
         if (player1Move != null && player2Move != null) {
-            turnTimeoutTask.cancel(true); // Cancela o timer
+            turnTimeoutTask.cancel(true);
             processTurn();
         }
     }
